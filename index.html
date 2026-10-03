@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>點心大挑戰 - Dim Sum Challenge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@600;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .bounce-feedback {
+            animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes pop-in {
+            0% { transform: scale(0.6) translateY(20px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .confetti-piece {
+            position: absolute;
+            width: 12px;
+            height: 24px;
+            top: -20px;
+            opacity: 0.8;
+            animation: fall 3s ease-in-out infinite;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex flex-col justify-between overflow-hidden">
+
+    <!-- Top Header Navigation Bar -->
+    <header class="bg-slate-800 border-b-4 border-slate-700 px-4 py-3 sm:px-8 sm:py-4 flex items-center justify-between shadow-lg z-10">
+        <div class="flex items-center space-x-3">
+            <span class="text-2xl sm:text-4xl">🥟</span>
+            <h1 class="text-xl sm:text-3xl font-black text-amber-400 tracking-wider">點心大挑戰</h1>
+        </div>
+
+        <div class="flex items-center space-x-3 sm:space-x-6">
+            <!-- Round Progress -->
+            <div class="bg-slate-900 border-2 border-slate-600 rounded-2xl px-3 py-1 sm:px-5 sm:py-2 flex items-center space-x-2">
+                <span class="text-slate-400 text-sm sm:text-xl font-bold">進度</span>
+                <span id="round-indicator" class="text-amber-400 text-xl sm:text-3xl font-black">1 / 3</span>
+            </div>
+
+            <!-- Score -->
+            <div class="bg-slate-900 border-2 border-slate-600 rounded-2xl px-3 py-1 sm:px-5 sm:py-2 flex items-center space-x-2">
+                <span class="text-slate-400 text-sm sm:text-xl font-bold">得分</span>
+                <span id="score-display" class="text-emerald-400 text-xl sm:text-3xl font-black">0</span>
+            </div>
+
+            <!-- Speech Replay Button -->
+            <button id="btn-replay" onclick="replayQuestionPrompt()" 
+                class="hidden bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 font-black px-3 py-2 sm:px-5 sm:py-2.5 rounded-2xl border-b-4 border-amber-700 flex items-center space-x-2 text-base sm:text-xl shadow-lg transition transform active:scale-95">
+                <svg class="w-5 h-5 sm:w-7 sm:h-7" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+                </svg>
+                <span class="inline">再聽一次</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Game Area -->
+    <main class="flex-1 flex flex-col justify-between p-3 sm:p-5 max-w-7xl mx-auto w-full relative">
+        
+        <!-- Compact Question Prompt Banner (Font size adjusted to 1.2rem ~ 1.4rem) -->
+        <div class="text-center my-1 sm:my-2 bg-slate-800/90 border-2 sm:border-4 border-amber-400/80 rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 shadow-xl backdrop-blur-sm">
+            <h2 id="question-text" class="text-lg sm:text-xl md:text-2xl font-black text-amber-300 tracking-wide drop-shadow-md">
+                請點擊下方「開始遊戲」
+            </h2>
+        </div>
+
+        <!-- Left & Right Split High-Contrast Choice Container -->
+        <div id="choices-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8 flex-1 my-2 min-h-[340px] sm:min-h-[440px]">
+            
+            <!-- LEFT COLUMN OPTION (No Left/Right Label) -->
+            <button id="card-left" onclick="handleChoice('left')" disabled
+                class="group relative bg-gradient-to-b from-sky-500 to-blue-700 hover:from-sky-400 hover:to-blue-600 active:from-sky-600 active:to-blue-800 border-8 border-sky-300 rounded-3xl p-4 sm:p-6 flex flex-col items-center justify-between shadow-2xl transition-all duration-200 transform md:hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                
+                <!-- SVG Dim Sum Graphic Area -->
+                <div id="svg-container-left" class="w-full flex-1 flex items-center justify-center p-2 sm:p-4 my-2">
+                    <!-- SVG dynamic content injected here -->
+                </div>
+
+                <!-- Text Title Label -->
+                <div class="w-full bg-slate-950/80 rounded-2xl py-3 sm:py-5 border-2 border-sky-300/60 shadow-inner">
+                    <span id="label-left" class="text-3xl sm:text-5xl font-black text-white tracking-widest block text-center">
+                        ?
+                    </span>
+                </div>
+            </button>
+
+            <!-- RIGHT COLUMN OPTION (No Left/Right Label) -->
+            <button id="card-right" onclick="handleChoice('right')" disabled
+                class="group relative bg-gradient-to-b from-amber-500 to-orange-700 hover:from-amber-400 hover:to-orange-600 active:from-amber-600 active:to-orange-800 border-8 border-amber-300 rounded-3xl p-4 sm:p-6 flex flex-col items-center justify-between shadow-2xl transition-all duration-200 transform md:hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                
+                <!-- SVG Dim Sum Graphic Area -->
+                <div id="svg-container-right" class="w-full flex-1 flex items-center justify-center p-2 sm:p-4 my-2">
+                    <!-- SVG dynamic content injected here -->
+                </div>
+
+                <!-- Text Title Label -->
+                <div class="w-full bg-slate-950/80 rounded-2xl py-3 sm:py-5 border-2 border-amber-300/60 shadow-inner">
+                    <span id="label-right" class="text-3xl sm:text-5xl font-black text-white tracking-widest block text-center">
+                        ?
+                    </span>
+                </div>
+            </button>
+
+        </div>
+    </main>
+
+    <!-- OVERLAY: START GAME SCREEN -->
+    <div id="overlay-start" class="fixed inset-0 bg-slate-950/95 flex flex-col items-center justify-center z-50 p-6">
+        <div class="bg-slate-800 border-8 border-amber-400 rounded-3xl p-8 max-w-2xl w-full text-center shadow-2xl space-y-8 bounce-feedback">
+            <div class="text-7xl sm:text-9xl my-2">🥟 🥩</div>
+            <h1 class="text-4xl sm:text-6xl font-black text-amber-300 tracking-wider">點心大挑戰</h1>
+            <p class="text-xl sm:text-3xl text-slate-200 font-bold leading-relaxed">
+                仔細聽語音問題，選出正確的點心！<br>
+                <span class="text-amber-400 text-lg sm:text-2xl mt-2 block">( 適合桌面電腦及 iPad 觸控螢幕 )</span>
+            </p>
+            <button onclick="startGame()" 
+                class="w-full bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 font-black text-3xl sm:text-5xl py-6 rounded-2xl border-b-8 border-emerald-800 shadow-2xl transition transform hover:scale-105 active:scale-95 tracking-widest">
+                🚀 開始遊戲
+            </button>
+        </div>
+    </div>
+
+    <!-- OVERLAY: FEEDBACK TOAST / POPUP -->
+    <div id="overlay-feedback" class="pointer-events-none fixed inset-0 flex items-center justify-center z-40 hidden">
+        <div id="feedback-card" class="bg-slate-900/95 border-8 rounded-3xl px-10 py-8 shadow-2xl text-center bounce-feedback max-w-xl mx-4">
+            <div id="feedback-icon" class="text-7xl sm:text-9xl mb-4"></div>
+            <div id="feedback-text" class="text-3xl sm:text-5xl font-black tracking-wide"></div>
+        </div>
+    </div>
+
+    <!-- OVERLAY: GAME COMPLETE SCREEN -->
+    <div id="overlay-complete" class="fixed inset-0 bg-slate-950/95 flex flex-col items-center justify-center z-50 p-6 hidden">
+        <div id="confetti-container" class="absolute inset-0 overflow-hidden pointer-events-none"></div>
+        <div class="bg-slate-800 border-8 border-amber-400 rounded-3xl p-8 max-w-2xl w-full text-center shadow-2xl space-y-8 bounce-feedback z-10">
+            <div class="text-8xl">🏆</div>
+            <h2 class="text-4xl sm:text-6xl font-black text-amber-300">大功告成！</h2>
+            <div class="bg-slate-900 border-4 border-slate-700 rounded-2xl p-6">
+                <p class="text-2xl sm:text-4xl font-bold text-slate-300 mb-2">最終得分</p>
+                <p class="text-5xl sm:text-7xl font-black text-emerald-400" id="final-score">3 / 3</p>
+            </div>
+            <p id="final-message" class="text-2xl sm:text-3xl font-bold text-amber-200"></p>
+            <button onclick="resetGame()" 
+                class="w-full bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 font-black text-3xl sm:text-5xl py-6 rounded-2xl border-b-8 border-amber-700 shadow-2xl transition transform hover:scale-105 active:scale-95 tracking-widest">
+                🔄 再玩一次
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // High-Quality Vector Artwork for Dim Sum
+        const SVG_ARTWORK = {
+            siumai: `
+                <svg class="w-full h-full max-h-[220px] sm:max-h-[300px]" viewBox="0 0 300 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Bamboo Steamer Outer Ring -->
+                    <ellipse cx="150" cy="180" rx="140" ry="50" fill="#78350F" />
+                    <ellipse cx="150" cy="175" rx="138" ry="46" fill="#B45309" />
+                    <ellipse cx="150" cy="165" rx="130" ry="40" fill="#D97706" />
+                    <ellipse cx="150" cy="160" rx="122" ry="36" fill="#FEF3C7" />
+                    <!-- Steamer Paper Liner -->
+                    <ellipse cx="150" cy="158" rx="115" ry="32" fill="#FFFBEB" stroke="#FDE68A" stroke-width="3" stroke-dasharray="6 6" />
+                    
+                    <!-- Siu Mai Dumplings (4 Pieces) -->
+                    <!-- Back Left -->
+                    <g transform="translate(85, 105)">
+                        <path d="M15,45 Q5,25 20,5 Q35,0 50,5 Q65,25 55,45 Q35,55 15,45 Z" fill="#FACC15" stroke="#CA8A04" stroke-width="3"/>
+                        <ellipse cx="35" cy="12" rx="18" ry="10" fill="#F87171" />
+                        <ellipse cx="35" cy="12" rx="12" ry="6" fill="#EF4444" />
+                        <circle cx="32" cy="10" r="3" fill="#EA580C" />
+                        <circle cx="38" cy="13" r="2.5" fill="#EA580C" />
+                        <circle cx="35" cy="15" r="2" fill="#EA580C" />
+                    </g>
+                    <!-- Back Right -->
+                    <g transform="translate(150, 105)">
+                        <path d="M15,45 Q5,25 20,5 Q35,0 50,5 Q65,25 55,45 Q35,55 15,45 Z" fill="#FACC15" stroke="#CA8A04" stroke-width="3"/>
+                        <ellipse cx="35" cy="12" rx="18" ry="10" fill="#F87171" />
+                        <ellipse cx="35" cy="12" rx="12" ry="6" fill="#EF4444" />
+                        <circle cx="33" cy="11" r="3" fill="#EA580C" />
+                        <circle cx="39" cy="14" r="2.5" fill="#EA580C" />
+                    </g>
+                    <!-- Front Left -->
+                    <g transform="translate(100, 130)">
+                        <path d="M15,50 Q2,25 20,5 Q35,-2 55,5 Q68,25 58,50 Q35,62 15,50 Z" fill="#FDE047" stroke="#CA8A04" stroke-width="3"/>
+                        <path d="M18,30 Q15,15 25,8 M35,32 Q35,16 38,6 M50,30 Q53,16 48,8" stroke="#EAB308" stroke-width="2.5" fill="none"/>
+                        <ellipse cx="37" cy="14" rx="20" ry="11" fill="#F87171" />
+                        <ellipse cx="37" cy="14" rx="14" ry="7" fill="#DC2626" />
+                        <circle cx="33" cy="12" r="3.5" fill="#F97316" />
+                        <circle cx="40" cy="15" r="3" fill="#F97316" />
+                        <circle cx="36" cy="17" r="2.5" fill="#EA580C" />
+                    </g>
+                    <!-- Front Right -->
+                    <g transform="translate(145, 130)">
+                        <path d="M15,50 Q2,25 20,5 Q35,-2 55,5 Q68,25 58,50 Q35,62 15,50 Z" fill="#FDE047" stroke="#CA8A04" stroke-width="3"/>
+                        <path d="M18,30 Q15,15 25,8 M35,32 Q35,16 38,6 M50,30 Q53,16 48,8" stroke="#EAB308" stroke-width="2.5" fill="none"/>
+                        <ellipse cx="37" cy="14" rx="20" ry="11" fill="#F87171" />
+                        <ellipse cx="37" cy="14" rx="14" ry="7" fill="#DC2626" />
+                        <circle cx="34" cy="13" r="3.5" fill="#F97316" />
+                        <circle cx="41" cy="14" r="3" fill="#F97316" />
+                        <circle cx="37" cy="18" r="2.5" fill="#EA580C" />
+                    </g>
+                </svg>
+            `,
+            beefball: `
+                <svg class="w-full h-full max-h-[220px] sm:max-h-[300px]" viewBox="0 0 300 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Bamboo Steamer Outer Ring -->
+                    <ellipse cx="150" cy="180" rx="140" ry="50" fill="#78350F" />
+                    <ellipse cx="150" cy="175" rx="138" ry="46" fill="#B45309" />
+                    <ellipse cx="150" cy="165" rx="130" ry="40" fill="#D97706" />
+                    <!-- White Porcelain Plate -->
+                    <ellipse cx="150" cy="160" rx="120" ry="35" fill="#E2E8F0" />
+                    <ellipse cx="150" cy="157" rx="116" ry="32" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="3" />
+                    
+                    <!-- Bean Curd Sheet Bed -->
+                    <ellipse cx="150" cy="152" rx="90" ry="22" fill="#FEF08A" opacity="0.8"/>
+                    <path d="M70,150 Q110,165 150,152 Q190,165 230,150" stroke="#FDE047" stroke-width="4" fill="none"/>
+
+                    <!-- Steamed Beef Meatballs (3 Large Balls) -->
+                    <!-- Top Center Ball -->
+                    <g transform="translate(115, 80)">
+                        <circle cx="35" cy="35" r="32" fill="#78350F" stroke="#451A03" stroke-width="3" />
+                        <circle cx="28" cy="25" r="28" fill="#92400E" opacity="0.8" />
+                        <circle cx="25" cy="22" r="3" fill="#16A34A" />
+                        <rect x="35" y="18" width="6" height="3" rx="1" fill="#22C55E" transform="rotate(25 35 18)"/>
+                        <circle cx="42" cy="30" r="3.5" fill="#15803D" />
+                        <rect x="22" y="38" width="5" height="3" rx="1" fill="#166534" transform="rotate(-15 22 38)"/>
+                    </g>
+                    <!-- Bottom Left Ball -->
+                    <g transform="translate(75, 110)">
+                        <circle cx="35" cy="35" r="34" fill="#78350F" stroke="#451A03" stroke-width="3" />
+                        <circle cx="28" cy="25" r="30" fill="#92400E" opacity="0.8" />
+                        <circle cx="30" cy="20" r="4" fill="#16A34A" />
+                        <circle cx="45" cy="35" r="3" fill="#22C55E" />
+                        <rect x="18" y="30" width="7" height="3" rx="1" fill="#15803D" transform="rotate(40 18 30)"/>
+                        <circle cx="35" cy="42" r="3.5" fill="#166534" />
+                    </g>
+                    <!-- Bottom Right Ball -->
+                    <g transform="translate(155, 110)">
+                        <circle cx="35" cy="35" r="34" fill="#78350F" stroke="#451A03" stroke-width="3" />
+                        <circle cx="28" cy="25" r="30" fill="#92400E" opacity="0.8" />
+                        <circle cx="22" cy="25" r="3.5" fill="#22C55E" />
+                        <rect x="36" y="22" width="6" height="3" rx="1" fill="#16A34A" transform="rotate(-30 36 22)"/>
+                        <circle cx="42" cy="38" r="4" fill="#15803D" />
+                        <circle cx="28" cy="42" r="3" fill="#166534" />
+                    </g>
+                </svg>
+            `
+        };
+
+        // Items Data Definition
+        const DIM_SUM_ITEMS = {
+            siumai: { name: '燒賣', key: 'siumai', svg: SVG_ARTWORK.siumai },
+            beefball: { name: '牛肉球', key: 'beefball', svg: SVG_ARTWORK.beefball }
+        };
+
+        // Game State Variables
+        let currentRound = 0;
+        const totalRounds = 3;
+        let score = 0;
+        let currentTarget = null;
+        let leftItem = null;
+        let rightItem = null;
+        let isAnswerLocked = false;
+        let roundQuestions = [];
+
+        function speak(text, onEndCallback) {
+            if (!('speechSynthesis' in window)) {
+                if (onEndCallback) setTimeout(onEndCallback, 1200);
+                return;
+            }
+
+            window.speechSynthesis.cancel(); // Stop preceding speech
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            
+            // Search for Hong Kong Cantonese voice, fallback to Taiwan/Chinese
+            const voices = window.speechSynthesis.getVoices();
+            const hkVoice = voices.find(v => v.lang === 'zh-HK' || v.lang.includes('HK') || v.lang.includes('yue'));
+            const twVoice = voices.find(v => v.lang === 'zh-TW' || v.lang.includes('TW'));
+            
+            if (hkVoice) {
+                utterance.voice = hkVoice;
+                utterance.lang = 'zh-HK';
+            } else if (twVoice) {
+                utterance.voice = twVoice;
+                utterance.lang = 'zh-TW';
+            } else {
+                utterance.lang = 'zh-HK';
+            }
+
+            utterance.rate = 0.88;
+            utterance.pitch = 1.0;
+
+            if (onEndCallback) {
+                utterance.onend = onEndCallback;
+                utterance.onerror = onEndCallback;
+            }
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                window.speechSynthesis.getVoices();
+            };
+        }
+
+        function startGame() {
+            document.getElementById('overlay-start').classList.add('hidden');
+            document.getElementById('btn-replay').classList.remove('hidden');
+            
+            if ('speechSynthesis' in window) {
+                const primeSpeech = new SpeechSynthesisUtterance('');
+                window.speechSynthesis.speak(primeSpeech);
+            }
+
+            // Generate 3 random target questions
+            const options = ['siumai', 'beefball'];
+            roundQuestions = [
+                options[Math.floor(Math.random() * 2)],
+                options[Math.floor(Math.random() * 2)],
+                options[Math.floor(Math.random() * 2)]
+            ];
+            
+            score = 0;
+            currentRound = 0;
+            updateHeaderUI();
+            nextRound();
+        }
+
+        function nextRound() {
+            if (currentRound >= totalRounds) {
+                showGameComplete();
+                return;
+            }
+
+            currentRound++;
+            isAnswerLocked = false;
+            updateHeaderUI();
+
+            const targetKey = roundQuestions[currentRound - 1];
+            currentTarget = DIM_SUM_ITEMS[targetKey];
+
+            // Randomize whether target item is on the left or right
+            const isTargetLeft = Math.random() < 0.5;
+            const otherKey = targetKey === 'siumai' ? 'beefball' : 'siumai';
+
+            leftItem = isTargetLeft ? currentTarget : DIM_SUM_ITEMS[otherKey];
+            rightItem = isTargetLeft ? DIM_SUM_ITEMS[otherKey] : currentTarget;
+
+            // Render SVG graphics and text labels
+            document.getElementById('svg-container-left').innerHTML = leftItem.svg;
+            document.getElementById('label-left').textContent = leftItem.name;
+
+            document.getElementById('svg-container-right').innerHTML = rightItem.svg;
+            document.getElementById('label-right').textContent = rightItem.name;
+
+            // Enable touch buttons
+            document.getElementById('card-left').disabled = false;
+            document.getElementById('card-right').disabled = false;
+
+            resetCardStyles();
+
+            // Set question banner text with compact size
+            const promptText = `哪一個是「${currentTarget.name}」？`;
+            document.getElementById('question-text').textContent = promptText;
+
+            // Voice out question prompt
+            speak(promptText);
+        }
+
+        function replayQuestionPrompt() {
+            if (currentTarget && !isAnswerLocked) {
+                const promptText = `哪一個是「${currentTarget.name}」？`;
+                speak(promptText);
+            }
+        }
+
+        function handleChoice(column) {
+            if (isAnswerLocked) return;
+            isAnswerLocked = true;
+
+            const chosenItem = (column === 'left') ? leftItem : rightItem;
+            const isCorrect = (chosenItem.key === currentTarget.key);
+
+            document.getElementById('card-left').disabled = true;
+            document.getElementById('card-right').disabled = true;
+
+            const cardLeft = document.getElementById('card-left');
+            const cardRight = document.getElementById('card-right');
+
+            if (isCorrect) {
+                score++;
+                updateHeaderUI();
+                
+                if (column === 'left') {
+                    cardLeft.classList.add('ring-8', 'ring-emerald-400');
+                } else {
+                    cardRight.classList.add('ring-8', 'ring-emerald-400');
+                }
+
+                showFeedbackToast(true, "你答對了!做得好!");
+                speak("你答對了!做得好!", () => {
+                    setTimeout(hideFeedbackAndContinue, 1000);
+                });
+            } else {
+                if (column === 'left') {
+                    cardLeft.classList.add('ring-8', 'ring-rose-500');
+                } else {
+                    cardRight.classList.add('ring-8', 'ring-rose-500');
+                }
+
+                showFeedbackToast(false, "你答錯了!努力再試!");
+                speak("你答錯了!努力再試!", () => {
+                    setTimeout(hideFeedbackAndContinue, 1000);
+                });
+            }
+        }
+
+        function showFeedbackToast(isCorrect, message) {
+            const overlay = document.getElementById('overlay-feedback');
+            const card = document.getElementById('feedback-card');
+            const icon = document.getElementById('feedback-icon');
+            const text = document.getElementById('feedback-text');
+
+            if (isCorrect) {
+                card.className = "bg-emerald-950/95 border-8 border-emerald-400 rounded-3xl px-8 py-8 sm:px-12 sm:py-10 shadow-2xl text-center bounce-feedback max-w-xl mx-4";
+                icon.textContent = "🎉";
+                text.className = "text-3xl sm:text-5xl font-black text-emerald-300 tracking-wide";
+            } else {
+                card.className = "bg-rose-950/95 border-8 border-rose-500 rounded-3xl px-8 py-8 sm:px-12 sm:py-10 shadow-2xl text-center bounce-feedback max-w-xl mx-4";
+                icon.textContent = "💪";
+                text.className = "text-3xl sm:text-5xl font-black text-rose-300 tracking-wide";
+            }
+
+            text.textContent = message;
+            overlay.classList.remove('hidden');
+        }
+
+        function hideFeedbackAndContinue() {
+            document.getElementById('overlay-feedback').classList.add('hidden');
+            nextRound();
+        }
+
+        function updateHeaderUI() {
+            document.getElementById('round-indicator').textContent = `${Math.min(currentRound, totalRounds)} / ${totalRounds}`;
+            document.getElementById('score-display').textContent = score;
+        }
+
+        function resetCardStyles() {
+            const cardLeft = document.getElementById('card-left');
+            const cardRight = document.getElementById('card-right');
+
+            cardLeft.classList.remove('ring-8', 'ring-emerald-400', 'ring-rose-500');
+            cardRight.classList.remove('ring-8', 'ring-emerald-400', 'ring-rose-500');
+        }
+
+        function showGameComplete() {
+            document.getElementById('overlay-complete').classList.remove('hidden');
+            document.getElementById('final-score').textContent = `${score} / ${totalRounds}`;
+
+            const msgElement = document.getElementById('final-message');
+            if (score === 3) {
+                msgElement.textContent = "太厲害了！你答對了所有問題！你是點心大師！👏";
+                createConfetti();
+                speak("太厲害了！你答對了所有問題！");
+            } else if (score >= 1) {
+                msgElement.textContent = "做得好！繼續加油，下次一定可以拿滿分！👍";
+                speak("做得好！繼續加油！");
+            } else {
+                msgElement.textContent = "再接再厲！按下方按鈕再挑戰一次吧！❤";
+                speak("再接再厲！再試一次吧！");
+            }
+        }
+
+        function createConfetti() {
+            const container = document.getElementById('confetti-container');
+            container.innerHTML = '';
+            const colors = ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6'];
+
+            for (let i = 0; i < 40; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti-piece';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                container.appendChild(confetti);
+            }
+        }
+
+        function resetGame() {
+            document.getElementById('overlay-complete').classList.add('hidden');
+            startGame();
+        }
+    </script>
+</body>
+</html>
